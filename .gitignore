@@ -1,0 +1,21 @@
+# Local Python environment and generated files
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.task_tmp/
+.coverage
+htmlcov/
+
+# Godot editor/import cache and exports
+.godot/
+godot/.godot/
+build/
+dist/
+
+# Local credentials and environment-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key

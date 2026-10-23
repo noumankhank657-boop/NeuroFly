@@ -1,0 +1,12 @@
+{
+  "project_name": "NueroFly",
+  "phase": 9,
+  "default_seed": 20261005,
+  "simulation_timestep_seconds": 0.01,
+  "rendering_fps": 60,
+  "backend": "python",
+  "frontend": "godot-4.x",
+  "data_format": ["csv", "json"],
+  "controller_training": false,
+  "status": "nuerofly-motor-model"
+}

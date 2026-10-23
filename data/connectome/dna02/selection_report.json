@@ -1,0 +1,10 @@
+{
+  "top_n_per_side": 40,
+  "n_input_neurons": 104,
+  "n_edges": 104,
+  "n_pfl3_neurons": 24,
+  "dropped_edges_other_or_unclear_nt": 0,
+  "excitatory_edges": 73,
+  "inhibitory_edges": 31,
+  "share_of_all_DNa02_input_synapses": 0.396
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101923">
+  <title>NueroFly | Navigation Controller Simulation</title>
+  <style>
+    :root { color-scheme: dark; --bg:#101923; --panel:#182632; --ink:#eff6f5; --muted:#b2c1c6; --mint:#8af0c3; --line:#30434f; }
+    * { box-sizing:border-box; } body { margin:0; background:radial-gradient(ellipse at 78% 2%,#24463f 0,transparent 36%),var(--bg); color:var(--ink); font:16px/1.6 system-ui,sans-serif; }
+    main { width:min(960px,92vw); margin:auto; padding:64px 0 48px; } .eyebrow { color:var(--mint); text-transform:uppercase; letter-spacing:.15em; font-size:.8rem; font-weight:700; }
+    h1 { font-size:clamp(2.8rem,8vw,5.5rem); line-height:1; margin:.35em 0; letter-spacing:-.06em; } h2 { margin-top:0; font-size:1.4rem; } .intro { max-width:700px; color:var(--muted); font-size:1.15rem; }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin:28px 0 44px; } a.button { display:inline-block; padding:11px 16px; color:#10221c; background:var(--mint); border-radius:8px; font-weight:750; text-decoration:none; } a.secondary { background:transparent; border:1px solid var(--line); color:var(--ink); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(245px,1fr)); gap:16px; } section, .video { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; margin:18px 0; } p,li { color:var(--muted); } strong { color:var(--ink); } .screen { min-height:200px; display:grid; place-items:center; text-align:center; color:var(--muted); background:radial-gradient(ellipse at center,#25463d,#13202a 72%); border-radius:10px; border:1px dashed #527064; padding:24px; }
+    code { color:var(--mint); } footer { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; }
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">FYP project · interactive simulation</div>
+  <h1>NueroFly</h1>
+  <p class="intro">A 3D arena for comparing navigation controllers in a planar fly simulation. Godot renders the world; a local Python backend handles movement, planning, and controller state.</p>
+  <div class="actions">
+    <!-- Replace # with tested, audience-accessible URLs before publishing. -->
+    <a class="button" href="#demo">Watch the demo (add link)</a>
+    <a class="button secondary" href="#source">View source (add link)</a>
+  </div>
+  <div class="video" id="demo"><div class="screen"><div><strong>Demo video goes here</strong><br>Upload a recording, then replace this panel with an accessible embed or link.</div></div></div>
+  <div class="grid">
+    <section><h2>What it shows</h2><p>An editable obstacle course, A* waypoint planning, and experimental controller comparisons: synthetic LIF, direct steering, and a small connectome-wired DNa02 circuit.</p></section>
+    <section><h2>How it is built</h2><p><strong>Godot 4.7</strong> provides the 3D interface. <strong>Python 3.10+</strong> runs the simulation and communicates with Godot over newline-delimited JSON on loopback TCP.</p></section>
+    <section><h2>Connectome data</h2><p>The selected MaleCNS v1.0 subgraph contains 106 nodes and 104 edges. Attribution and the stated CC-BY license are recorded in the source manifest. Its exact paper citation remains to be confirmed.</p></section>
+    <section><h2>Limits</h2><p>This is a deterministic planar simulation using circular obstacles and exact simulator coordinates, not vision. The DNa02 mode is a 107-neuron model with hand-set assumptions, not a complete fly brain or biological validation.</p></section>
+  </div>
+  <section><h2>Demo highlights</h2><ol><li>Start the default A* route and show the planned route and actual trajectory.</li><li>Reset and change an obstacle to show replanning or a no-route case.</li><li>Compare the neural modes and describe them as experiments, including their limitations.</li></ol></section>
+  <section id="source"><h2>Get the project</h2><p>Source repository: <strong>link will be added after publication</strong>. There is currently no tested downloadable Windows package. Running from source requires Python, Godot, and a first-run dependency install.</p></section>
+  <footer>Project showcase · last inspected 22 October 2026 · No public deployment or test result is claimed by this page.</footer>
+</main></body></html>

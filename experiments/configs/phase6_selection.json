@@ -1,0 +1,25 @@
+{
+  "status": "template-requires-researcher-supplied-connectome",
+  "circuit_name": "selected-navigation-subcircuit",
+  "purpose": "Document the navigation-related subcircuit selected from a cited dataset.",
+  "allow_demo_data": false,
+  "graph_filter": {
+    "node_ids": [],
+    "cell_types": [],
+    "regions": [],
+    "name_contains": null,
+    "minimum_weight": null,
+    "maximum_nodes": null
+  },
+  "required_external_manifest": [
+    "source_name",
+    "source_type",
+    "version",
+    "accessed_at",
+    "license",
+    "citation",
+    "selected_circuit_purpose",
+    "source_url"
+  ],
+  "note": "No biological IDs or records are bundled; populate only from a documented source."
+}

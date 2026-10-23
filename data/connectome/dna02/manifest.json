@@ -1,0 +1,11 @@
+{
+  "source_name": "MaleCNS connectome (Janelia FlyEM + Cambridge + MRC LMB, adult male Drosophila CNS)",
+  "source_type": "external",
+  "source_url": "https://male-cns.janelia.org",
+  "version": "male-cns:v1.0 (neuPrint dataset name, server https://neuprint.janelia.org)",
+  "accessed_at": "2026-10-21",
+  "license": "CC-BY (as stated on male-cns.janelia.org)",
+  "citation": "Janelia FlyEM male CNS v1.0 - exact paper citation to be confirmed from https://male-cns.janelia.org before the report",
+  "selected_circuit_purpose": "DNa02 steering readout and its direct presynaptic inputs for goal/obstacle steering",
+  "notes": "Edge weight = signed synapse count; sign from consensus neurotransmitter (ACh +, GABA/Glu -), a modelling assumption. DNa02 itself is labelled 'Prelim Roughly traced' in this release."
+}
