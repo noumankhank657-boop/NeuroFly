@@ -1,7 +1,7 @@
 """Local TCP server: newline-delimited JSON between Python (brain) and Godot (3D view).
 
 Host 127.0.0.1 only. Godot -> Python commands, one JSON object per line:
-  {"cmd":"configure","start":[x,z],"yaw_deg":0,"destination":[x,z],"mode":"neural|direct","obstacles":[[x,z,r],..]}
+  {"cmd":"configure","start":[x,z],"yaw_deg":0,"destination":[x,z],"mode":"planned|neural|connectome|learning","obstacles":[[x,z,r],..]}
   {"cmd":"start"} {"cmd":"pause"} {"cmd":"resume"} {"cmd":"reset"} {"cmd":"ping"}
 Python -> Godot: one state snapshot per line (schema nuerofly.state.v2) ~30 times/s.
 Errors never crash the server: they are sent as {"schema":..., "error":"..."} and shown in the UI.

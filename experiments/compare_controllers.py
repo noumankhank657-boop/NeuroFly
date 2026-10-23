@@ -1,4 +1,4 @@
-"""Compare the three controllers on identical scenarios (Python backend only).
+"""Compare the neural and connectome controllers on identical scenarios (Python backend only).
 
 Run from the project root:  python experiments\\compare_controllers.py
 No tuning is done here: the connectome mode uses its default (first-guess) parameters.
@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, ".")
 from backend.sim.loop import FlySimulation, SimConfig  # noqa: E402
 
-MODES = ("direct", "neural", "connectome")
+MODES = ("neural", "connectome")
 NAMED = {"no obstacle": [], "obstacle centre": [(0, 0, 1.5)], "obstacle left of line": [(-0.8, 0, 1.5)],
          "obstacle right of line": [(0.8, 0, 1.5)], "obstacle near start": [(0, 4.5, 1.0)],
          "obstacle near goal": [(0, -4.5, 1.0)]}

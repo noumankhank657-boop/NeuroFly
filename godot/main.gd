@@ -31,6 +31,7 @@ var dragging := false
 var obstacles: Array = [[0.0, 0.0, 1.5], [-1.7, -4.2, 1.0], [1.8, 3.5, 0.9]]
 var fields := {}                   # name -> LineEdit
 var speed_opt: OptionButton
+var controller_opt: OptionButton
 var status_label: Label
 var telemetry_label: Label
 var error_label: Label
@@ -291,11 +292,21 @@ func _build_ui() -> void:
     box.add_child(_row([["dest_x", "0"], ["dest_z", "-7"]]))
     box.add_child(_section("Goal tolerance (arrival radius)"))
     box.add_child(_row([["goal_tolerance", "0.5"]]))
-    box.add_child(_section("Experimental reinforcement learning / seed"))
+    box.add_child(_section("Controller mode (connectome demo; RL experiment)"))
     var mrow := HBoxContainer.new()
-    var controller_name := Label.new()
-    controller_name.text = "Tabular Q-learning (non-biological)"
-    mrow.add_child(controller_name)
+    controller_opt = OptionButton.new()
+    # The connectome demonstration is the default; learning remains the second focus.
+    for mode in ["connectome", "learning", "planned", "neural"]:
+        controller_opt.add_item({
+            "connectome": "Connectome-derived DNa02 (research model)",
+            "learning": "Tabular Q-learning (experimental)",
+            "planned": "A* waypoint planner",
+            "neural": "Synthetic LIF circuit"
+        }[mode])
+        controller_opt.set_item_metadata(controller_opt.item_count - 1, mode)
+    controller_opt.select(0)
+    controller_opt.item_selected.connect(func(_index: int): _on_reset())
+    mrow.add_child(controller_opt)
     var seed_edit := LineEdit.new()
     seed_edit.text = "1"
     seed_edit.placeholder_text = "seed"
@@ -380,7 +391,9 @@ func _config_message(cmd: String) -> Dictionary:
     return {"cmd": cmd, "start": [vals.start_x, vals.start_z], "yaw_deg": vals.yaw_deg,
         "destination": [vals.dest_x, vals.dest_z],
         "tolerance": vals.goal_tolerance,
-        "mode": "learning", "seed": int(fields["seed"].text) if fields["seed"].text.is_valid_int() else 1,
+        "timeout_s": 180.0,
+        "mode": str(controller_opt.get_item_metadata(controller_opt.selected)),
+        "seed": int(fields["seed"].text) if fields["seed"].text.is_valid_int() else 1,
         "obstacles": obstacles, "speed": [1, 2, 4, 8][speed_opt.selected]}
 
 func _on_start() -> void:

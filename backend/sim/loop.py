@@ -6,7 +6,6 @@ Four controllers, kept strictly separate and labelled in every snapshot:
   "neural"     : SYNTHETIC hand-wired LIF circuit (baseline, not biology)
   "connectome" : LIF circuit whose wiring is the MaleCNS v1.0 DNa02 subgraph
                  (forward speed channel is synthetic; see dna02_circuit.py)
-  "direct"     : a plain heading-error rule, used ONLY as a comparison baseline
   "learning"   : tabular Q-learning with local goal/obstacle sensory features
 """
 from __future__ import annotations
@@ -22,8 +21,7 @@ from backend.connectome.dna02_circuit import (PROVENANCE as DNA02_PROVENANCE,
                                               build_dna02_circuit)
 from backend.motor import MotorModel
 from backend.navigation import (NavigationSensoryEncoder, SteeringDecoder,
-                                SteeringDecoderParameters, heading_vector_from_yaw,
-                                signed_heading_error)
+                                SteeringDecoderParameters, heading_vector_from_yaw)
 from backend.navigation.planner import plan_route
 from backend.navigation.learning import ACTIONS, COMMANDS, NavigationLearner
 from .environment import Arena, Obstacle
@@ -38,10 +36,10 @@ class SimConfig:
     start: tuple[float, float] = (0.0, 7.0)      # (x, z)
     yaw_deg: float = 0.0                         # 0 = facing -Z, + = right
     destination: tuple[float, float] = (0.0, -7.0)
-    mode: str = "neural"                         # planned | neural | connectome | direct | learning
+    mode: str = "neural"                         # planned | neural | connectome | learning
     tolerance: float = 0.5                       # arrival radius
     safety_margin: float = 0.15                  # clearance beyond fly/obstacle radii
-    timeout_s: float = 60.0
+    timeout_s: float = 180.0
     obstacles: list[tuple[float, float, float]] = field(default_factory=list)
     seed: int = 1
 
@@ -49,8 +47,8 @@ class SimConfig:
         vals = [*self.start, self.yaw_deg, *self.destination, self.tolerance, self.timeout_s, self.safety_margin]
         if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in vals):
             raise ValueError("all coordinates must be finite numbers")
-        if self.mode not in ("planned", "neural", "connectome", "direct", "learning"):
-            raise ValueError("mode must be planned, neural, connectome, direct or learning")
+        if self.mode not in ("planned", "neural", "connectome", "learning"):
+            raise ValueError("mode must be planned, neural, connectome or learning")
         if self.tolerance <= 0 or self.timeout_s <= 0 or self.safety_margin < 0:
             raise ValueError("tolerance and timeout must be positive and safety_margin non-negative")
         if math.hypot(self.start[0] - self.destination[0], self.start[1] - self.destination[1]) <= self.tolerance:
@@ -213,11 +211,6 @@ class FlySimulation:
                 for n, s in res.spikes.items():
                     self.spike_counts[n] += int(s)
                 cmd = self.decoder.decode(self.circuit).as_dict()
-        else:  # direct baseline: NOT neural, clearly labelled
-            err = signed_heading_error(heading, goal - pos)
-            self.heading_error = err
-            cmd = {"left": max(0.0, -math.sin(err)), "right": max(0.0, math.sin(err)),
-                   "forward": max(0.0, math.cos(err))}
         self.last_cmd = cmd
 
         before = np.array(self.motor.position)
@@ -367,7 +360,6 @@ class FlySimulation:
             "mode": c.mode, "controller_note": ({
                 "neural": "LIF circuit (SYNTHETIC, not real connectome)",
                 "connectome": "LIF circuit wired from MaleCNS v1.0 DNa02 subgraph (forward channel synthetic)",
-                "direct": "direct rule baseline (no neurons)",
                 "learning": "tabular Q-learning from goal bearing and local obstacle cues"}[c.mode] if c.mode != "planned"
                 else "A* / waypoint navigation (non-neural planner)"),
             "step": self.steps, "time": round(self.sim_time, 3),

@@ -18,9 +18,24 @@ The FYP prototype focuses on a reproducible, inspectable navigation demonstratio
 - **Python 3.10+:** `backend/sim/loop.py` runs the arena, sensors, controller and motor. `backend/sim/server.py` hosts it on `127.0.0.1:8765` by default.
 - **Communication:** newline-delimited JSON over a loopback TCP socket. Godot sends `configure`, `start`, `pause`, `resume`, `reset` and `clear_memory` commands. Python sends `nuerofly.state.v2` snapshots at 30 Hz.
 
-## Main demo: experimental Q-learning controller
+## Controller modes
 
-The primary Godot UI selects this controller only. The controller has the following design:
+The Godot controller dropdown exposes four modes. It opens on the connectome-derived DNa02 demonstration; Q-learning is the second featured mode. Each run reports its active controller and mode-specific telemetry where applicable.
+
+Interactive trials now have a 180-second simulation-time limit (three minutes), up from 60 seconds. A timeout still reports failure; the longer window gives slow controllers more time but does not imply that a trial is progressing or will reach its goal. The seeded RL evaluation below keeps its explicitly configured 18-second episode limit.
+
+| Dropdown mode | Backend name | What it does |
+|---|---|---|
+| Connectome-derived DNa02 (research model) | `connectome` | LIF circuit wired from the selected MaleCNS DNa02 subgraph; sensory mapping and forward channel use modelling assumptions. |
+| Tabular Q-learning (experimental) | `learning` | Adaptive table controller described below; an engineering controller, not a biological fly circuit. |
+| A* waypoint planner | `planned` | Conventional global route planning with waypoints. |
+| Synthetic LIF circuit | `neural` | Hand-wired synthetic LIF navigation circuit, not connectome data. |
+
+The older planner and synthetic LIF controllers retain their existing implementations. Their inclusion in the selector does not change their research or engineering limitations.
+
+## Q-learning controller (second focus)
+
+The controller has the following design:
 
 - **State:** 8 quantized goal-bearing sectors, 4 local obstacle-cue categories, a near-obstacle bit and a stuck bit (up to 128 states).
 - **Actions:** forward, forward-left, forward-right, pivot-left and pivot-right.
@@ -33,7 +48,7 @@ The agent receives simulator-computed goal and obstacle cues, not camera images.
 
 ## Connectome research component
 
-The Python `connectome` mode remains available for research runs; it is hidden from the main demo selector. It loads a selected subgraph from [data/connectome/dna02](data/connectome/dna02/): 2 DNa02 output neurons, 104 selected presynaptic neurons and 104 edges. `selection_report.json` records that these edges cover 39.6% of the listed DNa02 input synapses.
+The `connectome` mode is the default in the main demo selector. It loads a selected subgraph from [data/connectome/dna02](data/connectome/dna02/): 2 DNa02 output neurons, 104 selected presynaptic neurons and 104 edges. `selection_report.json` records that these edges cover 39.6% of the listed DNa02 input synapses.
 
 The source is the **MaleCNS neuPrint dataset `male-cns:v1.0`**, released June 8, 2026. The project uses the derived files `nodes.csv`, `edges.csv` and `manifest.json`; the subgraph was built from the checked-in exports under `data/connectome_export/` by `experiments/build_dna02_subgraph.py`. Dataset license: **CC BY 4.0**. Attribute the source to the FlyEM Project at HHMI Janelia Research Campus, the Cambridge Drosophila Connectomics Group / MRC Laboratory of Molecular Biology, and Google Research; the checked-in data is a selected and transformed subgraph. The official [MaleCNS download page](https://male-cns.janelia.org/download/) provides the dataset files and license. Publication: Berg S, Beckett IR, Costa M, et al. “Sexual dimorphism in the complete Drosophila male central nervous system connectome.” *Cell*. 2026 Sep 3;189(18):5504–5526.e15. doi:[10.1016/j.cell.2026.08.015](https://doi.org/10.1016/j.cell.2026.08.015).
 
@@ -64,7 +79,18 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 The launcher creates `.venv` if needed, installs `requirements.txt`, starts the Python backend, opens Godot, and stops the backend when Godot exits. First-time dependency installation requires network access. If Godot is already on `PATH`, omit `-GodotPath`. This source project does not include a self-contained Windows build.
 
-## Tests and evaluation
+## RL training, policy lifecycle, tests and evaluation
+
+Select **Tabular Q-learning** and press **Start** to train through live episodes. The demonstration policy lives at `data/navigation_memory.json`: the backend loads it on startup and saves it after each completed episode. **Reset** preserves that policy; **Clear learned memory + reset** explicitly erases it. There is no separate manual save/load button: completed-episode persistence and startup loading are automatic.
+
+Evaluation uses temporary, isolated tables and cannot alter the demonstration policy:
+
+```powershell
+$env:PYTHONPATH = $PWD
+.\.venv\Scripts\python.exe -m experiments.evaluate_learning
+```
+
+The evaluation reports actual episode statuses, distance, blocked moves and path length. Existing measured outcomes below are mixed and do not establish consistent improvement.
 
 Run the Python suite from the repository root:
 
@@ -73,13 +99,6 @@ Run the Python suite from the repository root:
 ```
 
 **Verified 2026-10-23 after the prototype changes:** `132 passed`. The suite covers navigation, collision gating, goal tolerance, controller separation, connectome data loading, Q-learning persistence, pause/resume, reset, clear-memory, timeout and stuck reporting. Godot was not installed in this environment, so the visual application and launcher were not manually verified here.
-
-Repeat the seeded learning scenarios with:
-
-```powershell
-$env:PYTHONPATH = $PWD
-.\.venv\Scripts\python.exe -m experiments.evaluate_learning
-```
 
 This experiment uses an isolated temporary Q-table; it does not clear the live demo memory. Each layout and seed has four sequential episodes (seeds 2, 11 and 29; timeout 18 simulation seconds per episode):
 
@@ -111,7 +130,7 @@ Capture genuine screenshots from the running app: (1) the complete arena before 
 
 ## Preserved controller work
 
-Synthetic LIF, direct-rule and A* waypoint implementations, their tests, experiments and historical notes remain in the repository. They are not selectable in the main demo UI. The connectome implementation is also preserved as a labeled Python research mode. No global planner is used in the main learning controller.
+Synthetic LIF and A* waypoint implementations remain available in the main controller dropdown. The direct-rule controller has been removed from the app and backend. No global planner is used in the learning controller.
 
 ## Known limitations
 

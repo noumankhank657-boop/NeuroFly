@@ -1,7 +1,7 @@
 # Connectome-derived DNa02 steering circuit (MaleCNS v1.0)
 
 Mode name in the simulator: `connectome`. The older `neural` mode is the SYNTHETIC baseline,
-`direct` is a plain rule baseline, `planned` is A* waypoint navigation, and `learning` is tabular
+`planned` is A* waypoint navigation, and `learning` is tabular
 Q-learning. They are kept separate and labelled in snapshots. The main Godot demo now exposes only
 the experimental learning controller; these earlier modes remain research/legacy entry points.
 

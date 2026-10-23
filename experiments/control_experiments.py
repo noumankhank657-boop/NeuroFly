@@ -1,8 +1,7 @@
 """Control experiments: does the real wiring matter? (Python backend only)
 
 Run from the project root:  python experiments\\control_experiments.py
-Compares: a plain no-neuron program that senses obstacles, the real connectome wiring,
-the same wiring with every weight replaced by the average, and with weights shuffled.
+Compares the real connectome wiring with uniform and shuffled synapse weights.
 """
 import random
 import sys
@@ -10,7 +9,6 @@ import sys
 sys.path.insert(0, ".")
 import numpy as np
 from backend.sim.loop import FlySimulation, SimConfig
-from backend.navigation import heading_vector_from_yaw
 
 GOAL = [dict(yaw_deg=y) for y in (-90, -60, -30, 30, 60, 90, 150, -150)] + \
        [dict(start=(x, 7.0), yaw_deg=y) for x, y in ((4, 0), (-4, 0), (5, 40), (-5, -40))]
@@ -23,22 +21,6 @@ while len(HELD) < 30:
     except ValueError:
         pass
 
-
-def rule_run(cfg):
-    """A plain program, NO neurons: encoder currents used directly as commands (it does sense obstacles)."""
-    s = FlySimulation(SimConfig(mode="direct", timeout_s=40, **cfg)); s.start()
-    c0 = s.config
-    while s.status == "running":
-        pos = np.array(s.motor.position); goal = np.array([c0.destination[0],0.0,c0.destination[1]])
-        h = heading_vector_from_yaw(s.motor.yaw_radians)
-        enc = s.encoder.encode(pos, h, goal, s.arena.sensed_points(pos[0], pos[2]))
-        c = enc.currents
-        cmd = {"left": min(1.0,c["sens_left"]), "right": min(1.0,c["sens_right"]), "forward": min(1.0,c["sens_forward"])}
-        st = s.motor.step(cmd); s.steps += 1; s.sim_time += 0.01
-        if s.arena.collision(st.position[0], st.position[2]): s.status = "collision"
-        elif s.distance() <= c0.tolerance: s.status = "reached"
-        elif s.sim_time >= c0.timeout_s: s.status = "timeout"
-    return s
 
 def tally_fn(cases, fn):
     t = {"reached":0,"collision":0,"timeout":0}
@@ -66,8 +48,6 @@ def uniform(s):
     pos = np.mean([a["weight"] for a in edges if a["weight"]>0]); neg = np.mean([a["weight"] for a in edges if a["weight"]<0])
     for a in edges: a["weight"] = pos if a["weight"]>0 else neg
 
-print("Plain program WITH obstacle sensing, no neurons:")
-print("  goal-only 12:", tally_fn(GOAL, rule_run)); print("  30 cases   :", tally_fn(HELD, rule_run))
 print("Real connectome wiring:")
 print("  goal-only 12:", tally_fn(GOAL, wired(lambda s:None))); print("  30 cases   :", tally_fn(HELD, wired(lambda s:None)))
 print("Same wiring but every synapse weight replaced by the average (uniform):")
