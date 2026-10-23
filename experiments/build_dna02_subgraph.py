@@ -63,14 +63,17 @@ def main():
                   "weight": sel.signed_weight, "synapses": sel.weight, "nt": sel.nt}).to_csv(OUT / "edges.csv", index=False)
 
     manifest = {
-        "source_name": "MaleCNS connectome (Janelia FlyEM + Cambridge + MRC LMB, adult male Drosophila CNS)",
+        "source_name": "MaleCNS connectome (Janelia FlyEM + Cambridge + MRC LMB + Google Research, adult male Drosophila CNS)",
         "source_type": "external",
         "source_url": "https://male-cns.janelia.org",
         "version": "male-cns:v1.0 (neuPrint dataset name, server https://neuprint.janelia.org)",
         "accessed_at": "2026-10-21",
-        "license": "CC-BY (as stated on male-cns.janelia.org)",
-        "citation": "Janelia FlyEM male CNS v1.0 - exact paper citation to be confirmed from https://male-cns.janelia.org before the report",
+        "license": "CC BY 4.0 (Creative Commons Attribution 4.0 International)",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "citation": "Berg S, Beckett IR, Costa M, et al. Sexual dimorphism in the complete Drosophila male central nervous system connectome. Cell. 2026 Sep 3;189(18):5504-5526.e15. doi:10.1016/j.cell.2026.08.015.",
+        "attribution": "FlyEM Project at HHMI Janelia Research Campus; Cambridge Drosophila Connectomics Group / MRC Laboratory of Molecular Biology; Google Research",
         "selected_circuit_purpose": "DNa02 steering readout and its direct presynaptic inputs for goal/obstacle steering",
+        "adaptation_notice": "Selected and transformed subgraph: top 40 inputs per DNa02 side plus all PFL3 inputs; sign assigned from predicted neurotransmitter; see experiments/build_dna02_subgraph.py.",
         "notes": "Edge weight = signed synapse count; sign from consensus neurotransmitter (ACh +, GABA/Glu -), a modelling assumption. DNa02 itself is labelled 'Prelim Roughly traced' in this release.",
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")

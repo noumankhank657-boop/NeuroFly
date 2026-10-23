@@ -2,7 +2,7 @@ extends Node3D
 ## NueroFly main scene. Builds the arena, fly, camera, lights and UI IN CODE,
 ## so no manual editor work is needed. Godot never decides where the fly goes:
 ## it only draws state from the Python simulation backend. A* is a conventional
-## non-neural planner; the LIF and DNa02 modes are separate experiments.
+## non-neural planner; LIF and DNa02 remain separate research experiments.
 ## Coordinates: Godot X/Y/Z == Python X/Y/Z. Only rotation differs:
 ##   Python yaw>0 turns RIGHT, Godot rotation.y>0 turns LEFT  =>  rotation.y = -yaw.
 
@@ -30,12 +30,10 @@ var dragging := false
 
 var obstacles: Array = [[0.0, 0.0, 1.5], [-1.7, -4.2, 1.0], [1.8, 3.5, 0.9]]
 var fields := {}                   # name -> LineEdit
-var mode_opt: OptionButton
 var speed_opt: OptionButton
+var controller_opt: OptionButton
 var status_label: Label
 var telemetry_label: Label
-var neural_label: Label
-var neural_panel: Control
 var error_label: Label
 var conn_label: Label
 var last_state := {}
@@ -271,11 +269,15 @@ func _build_ui() -> void:
     var panel := PanelContainer.new()
     panel.position = Vector2(10, 10)
     layer.add_child(panel)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(350, 680)
+    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    panel.add_child(scroll)
     var box := VBoxContainer.new()
-    box.custom_minimum_size = Vector2(260, 0)
-    panel.add_child(box)
+    box.custom_minimum_size = Vector2(330, 0)
+    scroll.add_child(box)
     var title := Label.new()
-    title.text = "NueroFly - 3D navigation test arena"
+    title.text = "Digital Fly: 3D navigation simulation"
     box.add_child(title)
     conn_label = Label.new()
     box.add_child(conn_label)
@@ -290,15 +292,27 @@ func _build_ui() -> void:
     box.add_child(_row([["dest_x", "0"], ["dest_z", "-7"]]))
     box.add_child(_section("Goal tolerance (arrival radius)"))
     box.add_child(_row([["goal_tolerance", "0.5"]]))
-    box.add_child(_section("Controller / sim speed"))
+    box.add_child(_section("Controller mode (connectome demo; RL experiment)"))
     var mrow := HBoxContainer.new()
-    mode_opt = OptionButton.new()
-    mode_opt.add_item("A* planner (non-neural)")
-    mode_opt.add_item("Synthetic LIF")
-    mode_opt.add_item("Direct baseline (no neurons)")
-    mode_opt.add_item("MaleCNS DNa02 connectome-wired")
-    mode_opt.selected = 0
-    mrow.add_child(mode_opt)
+    controller_opt = OptionButton.new()
+    # The connectome demonstration is the default; learning remains the second focus.
+    for mode in ["connectome", "learning", "planned", "neural"]:
+        controller_opt.add_item({
+            "connectome": "Connectome-derived DNa02 (research model)",
+            "learning": "Tabular Q-learning (experimental)",
+            "planned": "A* waypoint planner",
+            "neural": "Synthetic LIF circuit"
+        }[mode])
+        controller_opt.set_item_metadata(controller_opt.item_count - 1, mode)
+    controller_opt.select(0)
+    controller_opt.item_selected.connect(func(_index: int): _on_reset())
+    mrow.add_child(controller_opt)
+    var seed_edit := LineEdit.new()
+    seed_edit.text = "1"
+    seed_edit.placeholder_text = "seed"
+    seed_edit.custom_minimum_size = Vector2(60, 0)
+    fields["seed"] = seed_edit
+    mrow.add_child(seed_edit)
     speed_opt = OptionButton.new()
     for s in ["1x", "2x", "4x", "8x"]:
         speed_opt.add_item(s)
@@ -310,6 +324,7 @@ func _build_ui() -> void:
     b1.add_child(_btn("Resume", func(): _send({"cmd": "resume"})))
     b1.add_child(_btn("Reset", _on_reset))
     box.add_child(b1)
+    box.add_child(_btn("Clear learned memory + reset", _on_clear_memory))
     box.add_child(_section("Obstacle (x, z, radius)"))
     box.add_child(_row([["obs_x", "0"], ["obs_z", "0"], ["obs_r", "1.5"]]))
     var b2 := HBoxContainer.new()
@@ -324,27 +339,10 @@ func _build_ui() -> void:
     cb.button_pressed = true
     cb.toggled.connect(func(on: bool): traj_node.visible = on)
     b3.add_child(cb)
-    var cn := CheckBox.new()
-    cn.text = "Neural"
-    cn.button_pressed = true
-    cn.toggled.connect(func(on: bool): neural_panel.visible = on)
-    b3.add_child(cn)
     box.add_child(b3)
     box.add_child(_section("Telemetry (from Python backend)"))
     telemetry_label = Label.new()
     box.add_child(telemetry_label)
-    # neural activity panel, right side
-    var np := PanelContainer.new()
-    np.anchor_left = 1.0
-    np.anchor_right = 1.0
-    np.offset_left = -330
-    np.offset_right = -10
-    np.offset_top = 10
-    layer.add_child(np)
-    neural_panel = np
-    neural_label = Label.new()
-    neural_label.text = "Neural activity (real model state)"
-    np.add_child(neural_label)
 
 func _section(t: String) -> Label:
     var l := Label.new()
@@ -393,7 +391,9 @@ func _config_message(cmd: String) -> Dictionary:
     return {"cmd": cmd, "start": [vals.start_x, vals.start_z], "yaw_deg": vals.yaw_deg,
         "destination": [vals.dest_x, vals.dest_z],
         "tolerance": vals.goal_tolerance,
-        "mode": ["planned", "neural", "direct", "connectome"][mode_opt.selected],
+        "timeout_s": 180.0,
+        "mode": str(controller_opt.get_item_metadata(controller_opt.selected)),
+        "seed": int(fields["seed"].text) if fields["seed"].text.is_valid_int() else 1,
         "obstacles": obstacles, "speed": [1, 2, 4, 8][speed_opt.selected]}
 
 func _on_start() -> void:
@@ -412,6 +412,11 @@ func _on_reset() -> void:
     _redraw_traj()
     _send(m)
     _send({"cmd": "reset"})
+
+func _on_clear_memory() -> void:
+    traj_points.clear()
+    _redraw_traj()
+    _send({"cmd": "clear_memory"})
 
 func _on_add_obstacle() -> void:
     var x := _num("obs_x"); var z := _num("obs_z"); var r := _num("obs_r")
@@ -450,37 +455,27 @@ func _on_state(s: Dictionary) -> void:
     var st: Array = s["start"]
     start_marker.position = Vector3(st[0], 0.02, st[2])
     error_label.text = "" if s.get("error") == null else str(s["error"])
-    _set_status(str(s["message"]), s["status"] in ["collision", "avoiding", "timeout", "error", "no_route", "route_blocked"])
+    _set_status(str(s["message"]), s["status"] in ["collision", "avoiding", "timeout", "error", "no_route", "route_blocked", "stuck", "failed"])
     _draw_route(s.get("route", []))
-    if s["status"] == "running":
+    if s["status"] in ["running", "exploring", "navigating", "learning", "avoiding"]:
         if traj_points.is_empty() or traj_points[traj_points.size() - 1].distance_to(fly_target_pos) > 0.05:
             traj_points.append(Vector3(p[0], 0.05, p[2]))
             if traj_points.size() > 4000:
                 traj_points.remove_at(0)
             _redraw_traj()
-    var neural: Dictionary = s["neural"]
-    telemetry_label.text = "Controller: %s\nStatus: %s   step %d   t=%.2fs\nPos x=%.2f y=%.2f z=%.2f\nHeading %.1f deg  err %.1f deg\nDest  x=%.1f z=%.1f   dist %.2f\nSteer L=%.2f R=%.2f F=%.2f\nSpeed %.2f   yaw rate %.2f\nCollision: %s   Path %.2f" % [
+    telemetry_label.text = "Controller: %s\nStatus: %s   step %d   t=%.2fs\nPos x=%.2f y=%.2f z=%.2f\nHeading %.1f deg  err %.1f deg\nDest  x=%.1f z=%.1f   dist %.2f\nSteer L=%.2f R=%.2f F=%.2f\nSpeed %.2f   yaw rate %.2f\nBlocked moves: %d   Path %.2f" % [
         s["controller_note"], s["status"], int(s["step"]), float(s["time"]),
         p[0], p[1], p[2], rad_to_deg(float(s["yaw_rad"])), rad_to_deg(float(s["heading_error"])),
         d[0], d[2], float(s["distance"]),
         s["steering"]["left"], s["steering"]["right"], s["steering"]["forward"],
         float(s["speed"]), float(s["yaw_rate"]),
-        str(s["collision"]) if s["collision"] != null else "none", float(s["path_length"])]
+        int(s.get("collision_count", 0)), float(s["path_length"])]
     telemetry_label.text += "\nGoal tolerance %.2f   fly radius %.2f + safety %.2f" % [float(s.get("goal_tolerance", 0.5)), float(s.get("fly_radius", 0.3)), float(s.get("safety_margin", 0.15))]
+    var learning: Dictionary = s.get("learning", {})
+    telemetry_label.text += "\nLearning episodes %d   states %d   seed %d   action %s" % [int(learning.get("episodes", 0)), int(learning.get("states", 0)), int(learning.get("seed", 1)), str(learning.get("action", "-"))]
     if s.get("mode") == "planned":
         telemetry_label.text += "\nA* waypoints: %d   next: %d   replans: %d" % [s.get("route", []).size(), int(s.get("route_index", 0)), int(s.get("route_replans", 0))]
-    var lines := "Movement controller: A* planner (non-neural)\nNeural circuits are not controlling movement.\n" if s["mode"] == "planned" else "Neural activity - %s circuit\n(membrane potential, spikes so far)\n" % neural["provenance"]
-    if s["mode"] != "planned":
-        for n in neural["potentials"].keys():
-            var v: float = clamp(float(neural["potentials"][n]), 0.0, 1.0)
-            var bar := "#".repeat(int(round(v * 12.0))).rpad(12, ".")
-            lines += "%-20s [%s] %d%s\n" % [n, bar, int(neural["spike_counts"][n]), " *" if neural["spikes"][n] else ""]
-    if s["mode"] == "direct":
-        lines += "\n(direct baseline: no neurons active)"
-    elif s["mode"] == "connectome":
-        lines += "\n(groups of real MaleCNS neurons; forward channel is synthetic)"
-    neural_label.text = lines
-    if selftest and s["status"] in ["reached", "collision", "timeout"]:
+    if selftest and s["status"] in ["reached", "collision", "timeout", "stuck", "failed"]:
         print("SELFTEST status=%s dist=%.2f steps=%d" % [s["status"], float(s["distance"]), int(s["step"])])
         get_tree().quit()
 

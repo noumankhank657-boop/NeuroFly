@@ -1,14 +1,19 @@
 # Connectome-derived DNa02 steering circuit (MaleCNS v1.0)
 
-Mode name in the simulator: `connectome`. The older `neural` mode is the SYNTHETIC baseline and
-`direct` is a plain rule baseline. The three are kept separate and labelled in every snapshot.
+Mode name in the simulator: `connectome`. The older `neural` mode is the SYNTHETIC baseline,
+`planned` is A* waypoint navigation, and `learning` is tabular
+Q-learning. They are kept separate and labelled in snapshots. The main Godot demo now exposes only
+the experimental learning controller; these earlier modes remain research/legacy entry points.
 
 ## Dataset (verified on the official page)
 - MaleCNS, adult male Drosophila central nervous system (Janelia FlyEM + Cambridge + MRC LMB).
 - neuPrint dataset name `male-cns:v1.0`, server https://neuprint.janelia.org, accessed 2026-10-21.
-- License: CC-BY (per male-cns.janelia.org). TODO before the report: copy the exact paper citation
-  from https://male-cns.janelia.org (not confirmed here). Release date differs between sources
-  (June 8 vs Sept 3, 2026); cite only the version string.
+- License: CC BY 4.0 (Creative Commons Attribution 4.0 International), confirmed on the official
+  [MaleCNS download page](https://male-cns.janelia.org/download/) and the paper.
+- Citation: Berg S, Beckett IR, Costa M, et al. *Sexual dimorphism in the complete Drosophila male
+  central nervous system connectome.* Cell. 2026 Sep 3;189(18):5504-5526.e15.
+  doi:10.1016/j.cell.2026.08.015.
+- Release: MaleCNS v1.0 was released June 8, 2026; the paper was published September 3, 2026.
 - DNa02 itself is labelled "Prelim Roughly traced" in this release; 305 of 1095 inputs are too.
 
 ## Why DNa02 / PFL3 (evidence, from papers - not from this data)

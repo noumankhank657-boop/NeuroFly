@@ -14,7 +14,7 @@ def finish(config, max_steps=10000):
 
 
 def test_clear_destination_reached_with_configured_tolerance():
-    sim = finish(SimConfig(mode="direct"))
+    sim = finish(SimConfig())
     assert sim.status == "reached"
     assert sim.distance() <= sim.config.tolerance
 
@@ -38,26 +38,14 @@ def test_default_connectome_demo_tree_route_reaches_destination():
     assert sim.distance() <= sim.config.tolerance
 
 
-def test_direct_controller_block_is_reported_and_never_penetrates():
-    sim = FlySimulation(SimConfig(mode="direct", obstacles=[(0, 0, 1.0)], timeout_s=2))
-    sim.start()
-    for _ in range(1000):
-        if sim.status not in ("running", "avoiding"):
-            break
-        sim.step()
-    assert sim.status == "timeout"
-    assert sim.reached is False
-    assert sim.arena.collision(sim.motor.position[0], sim.motor.position[2]) is None
-
-
 def test_near_boundary_start_stays_inside_arena():
-    sim = finish(SimConfig(mode="direct", start=(11.4, 7), destination=(9, 7), yaw_deg=-90))
+    sim = finish(SimConfig(mode="neural", start=(11.4, 7), destination=(9, 7), yaw_deg=-90))
     assert sim.status in ("reached", "timeout")
     assert sim.arena.inside(sim.motor.position[0], sim.motor.position[2])
 
 
 def test_unreachable_goal_does_not_report_success():
-    sim = finish(SimConfig(mode="direct", start=(0, 7), destination=(0, -7),
+    sim = finish(SimConfig(mode="neural", start=(0, 7), destination=(0, -7),
                            obstacles=[(-6, 0, 5.7), (0, 0, 5.7), (6, 0, 5.7)], timeout_s=1))
     assert sim.status == "timeout"
     assert sim.reached is False
@@ -65,7 +53,7 @@ def test_unreachable_goal_does_not_report_success():
 
 
 def test_reset_clears_avoidance_collision_path_and_controller_state():
-    sim = FlySimulation(SimConfig(mode="direct", obstacles=[(0, 0, 1)]))
+    sim = FlySimulation(SimConfig(mode="neural", obstacles=[(0, 0, 1)]))
     sim.start()
     for _ in range(300):
         if sim.status not in ("running", "avoiding"):

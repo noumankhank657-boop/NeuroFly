@@ -1,7 +1,7 @@
 """Local TCP server: newline-delimited JSON between Python (brain) and Godot (3D view).
 
 Host 127.0.0.1 only. Godot -> Python commands, one JSON object per line:
-  {"cmd":"configure","start":[x,z],"yaw_deg":0,"destination":[x,z],"mode":"neural|direct","obstacles":[[x,z,r],..]}
+  {"cmd":"configure","start":[x,z],"yaw_deg":0,"destination":[x,z],"mode":"planned|neural|connectome|learning","obstacles":[[x,z,r],..]}
   {"cmd":"start"} {"cmd":"pause"} {"cmd":"resume"} {"cmd":"reset"} {"cmd":"ping"}
 Python -> Godot: one state snapshot per line (schema nuerofly.state.v2) ~30 times/s.
 Errors never crash the server: they are sent as {"schema":..., "error":"..."} and shown in the UI.
@@ -33,13 +33,17 @@ class Server:
                 destination=tuple(msg.get("destination", d.destination)), mode=msg.get("mode", d.mode),
                 obstacles=[tuple(o) for o in msg.get("obstacles", [])],
                 tolerance=msg.get("tolerance", d.tolerance), timeout_s=msg.get("timeout_s", d.timeout_s),
-                safety_margin=msg.get("safety_margin", d.safety_margin))
+                safety_margin=msg.get("safety_margin", d.safety_margin), seed=int(msg.get("seed", d.seed)))
             self.sim.configure(cfg)
             self.speed = max(1, min(8, int(msg.get("speed", self.speed))))
         elif cmd == "start": self.sim.start()
         elif cmd == "pause": self.sim.pause()
         elif cmd == "resume": self.sim.resume()
         elif cmd == "reset": self.sim.reset()
+        elif cmd == "clear_memory":
+            self.sim.learner.clear()
+            self.sim.reset()
+            self.sim.message = "Learned memory cleared; simulation reset"
         elif cmd == "speed": self.speed = max(1, min(8, int(msg.get("value", 1))))
         elif cmd == "ping": pass
         else: raise ValueError(f"unknown command: {cmd!r}")

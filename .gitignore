@@ -6,6 +6,7 @@ __pycache__/
 .task_tmp/
 .coverage
 htmlcov/
+data/navigation_memory.json
 
 # Godot editor/import cache and exports
 .godot/

@@ -52,12 +52,6 @@ def test_deterministic_repeat():
     assert a.motor.position == b.motor.position
 
 
-def test_direct_baseline_is_labelled_and_has_no_spikes():
-    s = run(SimConfig(mode="direct"), 300)
-    assert "no neurons" in s.snapshot(1)["controller_note"]
-    assert sum(s.spike_counts.values()) == 0
-
-
 def test_neural_mode_spikes():
     assert sum(run(SimConfig(), 300).spike_counts.values()) > 0
 
@@ -68,7 +62,7 @@ def test_wall_collision_detected():
 
 
 def test_obstacle_collision_recorded():
-    s = run(SimConfig(mode="direct", obstacles=[(0, 0, 1.0)]), 3000)
+    s = run(SimConfig(mode="neural", obstacles=[(0, 0, 1.0)]), 3000)
     assert s.status in ("running", "avoiding", "timeout")
     assert s.collision is None
     assert s.arena.collision(s.motor.position[0], s.motor.position[2]) is None
@@ -79,6 +73,7 @@ def test_obstacle_collision_recorded():
     dict(destination=(99, 0)),                # outside arena
     dict(start=(float("nan"), 0)),            # non-finite
     dict(mode="magic"),
+    dict(mode="direct"),                     # removed controller
     dict(obstacles=[(0, 7, 1.0)]),            # start inside obstacle
 ])
 def test_invalid_config_rejected(kw):
