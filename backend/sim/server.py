@@ -33,13 +33,17 @@ class Server:
                 destination=tuple(msg.get("destination", d.destination)), mode=msg.get("mode", d.mode),
                 obstacles=[tuple(o) for o in msg.get("obstacles", [])],
                 tolerance=msg.get("tolerance", d.tolerance), timeout_s=msg.get("timeout_s", d.timeout_s),
-                safety_margin=msg.get("safety_margin", d.safety_margin))
+                safety_margin=msg.get("safety_margin", d.safety_margin), seed=int(msg.get("seed", d.seed)))
             self.sim.configure(cfg)
             self.speed = max(1, min(8, int(msg.get("speed", self.speed))))
         elif cmd == "start": self.sim.start()
         elif cmd == "pause": self.sim.pause()
         elif cmd == "resume": self.sim.resume()
         elif cmd == "reset": self.sim.reset()
+        elif cmd == "clear_memory":
+            self.sim.learner.clear()
+            self.sim.reset()
+            self.sim.message = "Learned memory cleared; simulation reset"
         elif cmd == "speed": self.speed = max(1, min(8, int(msg.get("value", 1))))
         elif cmd == "ping": pass
         else: raise ValueError(f"unknown command: {cmd!r}")
